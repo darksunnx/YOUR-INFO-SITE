@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Information</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .card {
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .bi {
+            margin-right: 0.5rem;
+        }
+
+        .battery-level {
+            height: 20px;
+            background: var(--bs-success);
+            border-radius: 4px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .battery-low {
+            background: var(--bs-danger);
+        }
+
+        .battery-medium {
+            background: var(--bs-warning);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <header class="text-center mb-5">
+            <h1>System Information</h1>
+            <p class="text-muted">Displaying publicly available information about your device and connection</p>
+        </header>
+
+        <div class="row g-4">
+            <!-- Location Info -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-geo-alt"></i> Location Information
+                        </h5>
+                        <div id="locationInfo">
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Device Info -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-laptop"></i> Device Information
+                        </h5>
+                        <div id="deviceInfo">
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Battery Info -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-battery"></i> Battery Status
+                        </h5>
+                        <div id="batteryInfo">
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen Info -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-display"></i> Screen Information
+                        </h5>
+                        <div id="screenInfo">
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-5 text-center text-muted">
+            <small>This information is collected client-side and is not stored or transmitted.</small>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch IP and location information
+            fetchIPInfo();
+
+            // Get device information
+            updateDeviceInfo();
+
+            // Get battery information
+            updateBatteryInfo();
+
+            // Get screen information
+            updateScreenInfo();
+        });
+
+        async function fetchIPInfo() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                const locationHtml = `
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>IP Адрес:</strong> ${data.ip || 'Недоступно'}</li>
+                        <li><strong>Город:</strong> ${data.city || 'Недоступно'}</li>
+                        <li><strong>Регион:</strong> ${data.region || 'Недоступно'}</li>
+                        <li><strong>Страна:</strong> ${data.country_name || 'Недоступно'}</li>
+                        <li><strong>Провайдер:</strong> ${data.org || 'Недоступно'}</li>
+                        <li><strong>Часовой пояс:</strong> ${data.timezone || 'Недоступно'}</li>
+                        <li><strong>Почтовый индекс:</strong> ${data.postal || 'Недоступно'}</li>
+                    </ul>
+                `;
+
+                document.getElementById('locationInfo').innerHTML = locationHtml;
+            } catch (error) {
+                document.getElementById('locationInfo').innerHTML = `
+                    <div class="alert alert-danger">
+                        Не удалось получить информацию о местоположении: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function updateDeviceInfo() {
+            const deviceHtml = `
+                <ul class="list-unstyled">
+                    <li><strong>Браузер:</strong> ${navigator.userAgent}</li>
+                    <li><strong>Платформа:</strong> ${navigator.platform}</li>
+                    <li><strong>Язык:</strong> ${navigator.language}</li>
+                    <li><strong>Cookies включены:</strong> ${navigator.cookieEnabled ? 'Да' : 'Нет'}</li>
+                </ul>
+            `;
+
+            document.getElementById('deviceInfo').innerHTML = deviceHtml;
+        }
+
+        async function updateBatteryInfo() {
+            try {
+                if ('getBattery' in navigator) {
+                    const battery = await navigator.getBattery();
+
+                    const updateBatteryUI = () => {
+                        const level = Math.round(battery.level * 100);
+                        let batteryClass = 'battery-level';
+
+                        if (level <= 20) {
+                            batteryClass += ' battery-low';
+                        } else if (level <= 50) {
+                            batteryClass += ' battery-medium';
+                        }
+
+                        const batteryHtml = `
+                            <ul class="list-unstyled">
+                                <li>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="${batteryClass}" 
+                                             style="width: ${level}%" 
+                                             role="progressbar" 
+                                             aria-valuenow="${level}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            ${level}%
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="mt-2"><strong>Заряжается:</strong> ${battery.charging ? 'Да' : 'Нет'}</li>
+                                ${battery.charging ? 
+                                    `<li><strong>Время до полной зарядки:</strong> ${battery.chargingTime === Infinity ? 
+                                        'Неизвестно' : Math.round(battery.chargingTime / 60) + ' минут'}</li>` : 
+                                    `<li><strong>Осталось времени:</strong> ${battery.dischargingTime === Infinity ? 
+                                        'Неизвестно' : Math.round(battery.dischargingTime / 60) + ' минут'}</li>`}
+                            </ul>
+                        `;
+
+                        document.getElementById('batteryInfo').innerHTML = batteryHtml;
+                    };
+
+                    // Update initially and on battery status changes
+                    updateBatteryUI();
+                    battery.addEventListener('levelchange', updateBatteryUI);
+                    battery.addEventListener('chargingchange', updateBatteryUI);
+                } else {
+                    throw new Error('Battery status not available');
+                }
+            } catch (error) {
+                document.getElementById('batteryInfo').innerHTML = `
+                    <div class="alert alert-warning">
+                        Информация о батарее недоступна на этом устройстве
+                    </div>
+                `;
+            }
+        }
+
+        function updateScreenInfo() {
+            const screenHtml = `
+                <ul class="list-unstyled">
+                    <li><strong>Разрешение экрана:</strong> ${window.screen.width} x ${window.screen.height}</li>
+                    <li><strong>Доступная область:</strong> ${window.screen.availWidth} x ${window.screen.availHeight}</li>
+                    <li><strong>Глубина цвета:</strong> ${window.screen.colorDepth} бит</li>
+                    <li><strong>Плотность пикселей:</strong> ${window.devicePixelRatio}</li>
+                </ul>
+            `;
+
+            document.getElementById('screenInfo').innerHTML = screenHtml;
+        }
+    </script>
+</body>
+</html>
